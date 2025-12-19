@@ -64,6 +64,7 @@ This script:
 - Merges with existing data in `eua2_futures_data.csv`
 - Preserves all historical data
 - Shows summary of new and total records
+- Automatically updates the visualization (`eua2_futures_visualization.png`)
 
 **Important:** To get the latest updated data, you need to run the scraper again. The scraper does not automatically update data in the background. Each time you run `scrape_eua2.py`, it will:
 1. Check for new data on the ICE website
@@ -86,24 +87,20 @@ python scraper.py
 
 ### Visualizing Data
 
-After scraping data, create professional visualizations:
+After scraping data, create a professional visualization:
 
-**Comprehensive visualization** (default - includes multiple charts):
 ```bash
 python visualize.py
 ```
-This creates/updates `eua2_futures_visualization.png` with a comprehensive analysis including:
-- Main price trend chart with gradient fills
-- Price distribution histogram
-- Monthly average prices
 
-**Simple line chart**:
-```bash
-python visualize.py --simple
-```
-This creates/updates `eua2_futures_simple.png` with a clean, professional line chart.
+This creates/updates `eua2_futures_visualization.png` with a clean, professional line chart showing:
+- Historical price trend with gradient fill
+- Highlighted minimum and maximum price points
+- Average price line
+- Clear date formatting on x-axis
+- Optimized y-axis scale for better readability
 
-**Note:** Visualizations are automatically updated (overwritten) each time you run the script, so you always have the latest version without accumulating multiple files.
+**Note:** The visualization is automatically updated (overwritten) each time you run the script, so you always have the latest version without accumulating multiple files.
 
 **Other options**:
 ```bash

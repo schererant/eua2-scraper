@@ -467,18 +467,54 @@ class EUA2FuturesScraper:
                 price_value = item[1]
             
             if date_value and price_value:
-                # Normalize date
+                # Normalize date to YYYY-MM-DD format
+                date_obj = None
+                
                 if isinstance(date_value, (int, float)):
                     # Might be Unix timestamp (in milliseconds or seconds)
                     if date_value > 1e10:
                         date_value = date_value / 1000
-                    date_str = datetime.fromtimestamp(date_value).strftime('%Y-%m-%d')
+                    date_obj = datetime.fromtimestamp(date_value)
                 else:
-                    date_str = str(date_value)
+                    # Try to parse date string
+                    date_str = str(date_value).strip()
+                    date_formats = [
+                        '%Y-%m-%d',
+                        '%a %b %d %H:%M:%S %Y',  # "Mon Jun 30 00:00:00 2025"
+                        '%Y-%m-%d %H:%M:%S',
+                        '%m/%d/%Y',
+                        '%d/%m/%Y',
+                    ]
+                    for fmt in date_formats:
+                        try:
+                            date_obj = datetime.strptime(date_str, fmt)
+                            break
+                        except:
+                            continue
+                    
+                    # If still not parsed, try regex
+                    if not date_obj:
+                        date_match = re.search(r'(\d{4})-(\d{2})-(\d{2})', date_str)
+                        if date_match:
+                            try:
+                                date_obj = datetime(int(date_match.group(1)), 
+                                                   int(date_match.group(2)), 
+                                                   int(date_match.group(3)))
+                            except:
+                                pass
+                
+                if not date_obj:
+                    return None
+                
+                # Format date as YYYY-MM-DD
+                date_str = date_obj.strftime('%Y-%m-%d')
                 
                 # Normalize price
                 try:
                     price = float(price_value)
+                    # Skip invalid prices (market IDs, etc.)
+                    if price <= 0 or price > 1000000:
+                        return None
                 except:
                     return None
                 
@@ -663,10 +699,45 @@ class EUA2FuturesScraper:
                 for item in unique_data:
                     # Ensure date is in YYYY-MM-DD format
                     date_str = item.get('date', '')
+                    date_obj = None
+                    
+                    # Handle different date formats
                     if isinstance(date_str, datetime):
-                        date_str = date_str.strftime('%Y-%m-%d')
-                    elif not isinstance(date_str, str):
-                        date_str = str(date_str)
+                        date_obj = date_str
+                    elif isinstance(date_str, str):
+                        # Try to parse various date formats
+                        date_formats = [
+                            '%Y-%m-%d',
+                            '%a %b %d %H:%M:%S %Y',  # "Mon Jun 30 00:00:00 2025"
+                            '%Y-%m-%d %H:%M:%S',
+                            '%m/%d/%Y',
+                            '%d/%m/%Y',
+                        ]
+                        for fmt in date_formats:
+                            try:
+                                date_obj = datetime.strptime(date_str.strip(), fmt)
+                                break
+                            except:
+                                continue
+                        
+                        # If still not parsed, try regex
+                        if not date_obj:
+                            date_match = re.search(r'(\d{4})-(\d{2})-(\d{2})', date_str)
+                            if date_match:
+                                try:
+                                    date_obj = datetime(int(date_match.group(1)), 
+                                                       int(date_match.group(2)), 
+                                                       int(date_match.group(3)))
+                                except:
+                                    pass
+                    else:
+                        continue
+                    
+                    if not date_obj:
+                        continue
+                    
+                    # Format date as YYYY-MM-DD
+                    date_formatted = date_obj.strftime('%Y-%m-%d')
                     
                     # Ensure price is a float
                     price = item.get('price', 0)
@@ -676,10 +747,10 @@ class EUA2FuturesScraper:
                         except:
                             continue
                     
-                    # Only write valid data
-                    if date_str and price > 0:
+                    # Only write valid data (skip market IDs and invalid prices)
+                    if date_formatted and price > 0 and price < 1000000:
                         writer.writerow({
-                            'date': date_str,
+                            'date': date_formatted,
                             'price': f'{price:.2f}'
                         })
         

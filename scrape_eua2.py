@@ -6,6 +6,7 @@ Always merges with existing data to maintain complete historical record.
 """
 
 from scraper import EUA2FuturesScraper
+from visualize import EUA2DataVisualizer
 from pathlib import Path
 
 def main():
@@ -47,10 +48,31 @@ def main():
             prices = [d['price'] for d in final_data]
             print(f"  Price range: €{min(prices):.2f} - €{max(prices):.2f}")
             print(f"  Average price: €{sum(prices)/len(prices):.2f}")
+        
+        # Update visualization
+        print(f"\n{'='*60}")
+        print("Updating visualization...")
+        print(f"{'='*60}")
+        try:
+            visualizer = EUA2DataVisualizer(csv_file=csv_file)
+            visualizer.load_data()
+            visualizer.create_visualization(show_plot=False)
+            print("✓ Visualization updated successfully")
+        except Exception as e:
+            print(f"⚠ Warning: Could not update visualization: {e}")
     else:
         print("\n✗ No new data was extracted.")
         if existing_count > 0:
             print(f"  Existing CSV file unchanged ({existing_count} records)")
+            # Still try to update visualization with existing data
+            print("\nUpdating visualization with existing data...")
+            try:
+                visualizer = EUA2DataVisualizer(csv_file=csv_file)
+                visualizer.load_data()
+                visualizer.create_visualization(show_plot=False)
+                print("✓ Visualization updated successfully")
+            except Exception as e:
+                print(f"⚠ Warning: Could not update visualization: {e}")
         else:
             print("  Please check the website or update the scraper.")
 
